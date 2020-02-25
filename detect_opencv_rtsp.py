@@ -7,7 +7,7 @@ import params
 
 cvNet = cv2.dnn.readNetFromCaffe("./mssd512_voc.prototxt" , "./mssd512_voc.caffemodel" )
 
-def detect(cropped_file,im):
+def detect(out_file,im):
     #im = cv2.cvtColor(im,cv2.COLOR_BGR2RGB)
     to_draw = im.copy()
     pixel_means=[0.406, 0.456, 0.485]
@@ -19,13 +19,13 @@ def detect(cropped_file,im):
     for i in range(3):
       im_tensor[0, i, :, :] = (im[:, :, 2 - i]/pixel_scale - pixel_means[2 - i])/pixel_stds[2-i]
     cvNet.setInput(im_tensor)
-    print(im_tensor.shape)
+    #print(im_tensor.shape)
     import time
     cvOut = cvNet.forward()
     for _ in range(1):
         t0 =time.time()
         cvOut = cvNet.forward()
-        print(time.time() -t0)
+        #print(time.time() -t0)
     for detection in cvOut[0,0,:,:]:
         score = float(detection[2])
         #print("score = "+str(score))
@@ -40,28 +40,17 @@ def detect(cropped_file,im):
             #cv2.imshow("cropped" , cropped)
 
             #cv2.waitKey(0)
-            cv2.rectangle(to_draw, (left,top) , (right,bottom) , (0,255,0) , 1)
+            cv2.rectangle(to_draw, (left,top) , (right,bottom) , (0,0,255) , 3)
                 #Save file
-            #save_file_name = filename+".detected.jpeg" 
-            cv2.imwrite(cropped_file, to_draw) 
-            print("Saved: "+cropped_file)  
+            cropped_file_name = out_file+".cropped.jpeg" 
+            cv2.imwrite(cropped_file_name, cropped) 
+            cv2.imwrite(out_file, to_draw)
+            print("Saved: "+out_file)
     return to_draw
     #cv2.imshow('image' , to_draw)
     #cv2.waitKey(0)
     
-  
 
-# folder = "./input"
-# folder_out = "./output"
-# for filename in os.listdir(folder):
-#     path = os.path.join(folder, filename)
-#     out_path = os.path.join(folder_out, filename)
-#     if filename.lower().endswith(".jpeg"):
-#         print(filename)
-#         image = cv2.imread(path)
-#         #image  = align(image)
-#         detect(out_path,image)
-#         print("-----------")
 
 folder_out = "./output"
 
@@ -75,21 +64,17 @@ cv2.namedWindow(winName, cv2.WINDOW_NORMAL)
 v_source = params.get("RTSP","source1")
 video_capture = cv2.VideoCapture(v_source)
 while True:
-    
     if(frameNo%skipFrame == 0) : 
         # Grab a single frame of video
         ret, frame = video_capture.read()
             # Display the resulting image
-        cropped_file = os.path.join(folder_out, "{}.jpeg".format(frameNo))
-        frame_detect = detect(cropped_file,frame)
+        out_file = os.path.join(folder_out, "{}.jpeg".format(frameNo))
+        frame_detect = detect(out_file,frame)
         cv2.imshow(winName, frame_detect)
-
     # Hit 'q' on the keyboard to quit!
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
     frameNo +=1
-
-
 # Release handle to the webcam
 video_capture.release()
 cv2.destroyAllWindows()

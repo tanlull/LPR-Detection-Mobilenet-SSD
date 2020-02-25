@@ -5,7 +5,8 @@ import os
 from align import *
 import params 
 
-cvNet = cv2.dnn.readNetFromCaffe("./mssd512_voc.prototxt" , "./mssd512_voc.caffemodel" )
+#cvNet = cv2.dnn.readNetFromCaffe("./mssd512_voc.prototxt" , "./mssd512_voc.caffemodel" )
+cvNet = cv2.dnn.readNetFromCaffe("./lpr.prototxt" , "./lpr.caffemodel" )
 
 def detect(out_file,im):
     #im = cv2.cvtColor(im,cv2.COLOR_BGR2RGB)

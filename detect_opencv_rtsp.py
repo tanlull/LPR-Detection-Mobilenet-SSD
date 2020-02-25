@@ -3,10 +3,11 @@ import cv2
 import numpy as np 
 import os
 from align import *
+import params 
 
 cvNet = cv2.dnn.readNetFromCaffe("./mssd512_voc.prototxt" , "./mssd512_voc.caffemodel" )
 
-def detect(filename,im):
+def detect(cropped_file,im):
     #im = cv2.cvtColor(im,cv2.COLOR_BGR2RGB)
     to_draw = im.copy()
     pixel_means=[0.406, 0.456, 0.485]
@@ -36,30 +37,59 @@ def detect(filename,im):
             bottom = int(detection[6] * rows)
             cropped = to_draw[top:bottom, left:right]
             #cropped = align(cropped)
-            cv2.imshow("cropped" , cropped)
+            #cv2.imshow("cropped" , cropped)
 
             #cv2.waitKey(0)
             cv2.rectangle(to_draw, (left,top) , (right,bottom) , (0,255,0) , 1)
                 #Save file
-            save_file_name = filename+".detected.jpeg" 
-            cv2.imwrite(save_file_name, to_draw) 
-            print("Saved:"+save_file_name)  
-    
-    cv2.imshow('image' , to_draw)
-    cv2.waitKey(0)
+            #save_file_name = filename+".detected.jpeg" 
+            cv2.imwrite(cropped_file, to_draw) 
+            print("Saved: "+cropped_file)  
+    return to_draw
+    #cv2.imshow('image' , to_draw)
+    #cv2.waitKey(0)
     
   
 
-folder = "./input"
+# folder = "./input"
+# folder_out = "./output"
+# for filename in os.listdir(folder):
+#     path = os.path.join(folder, filename)
+#     out_path = os.path.join(folder_out, filename)
+#     if filename.lower().endswith(".jpeg"):
+#         print(filename)
+#         image = cv2.imread(path)
+#         #image  = align(image)
+#         detect(out_path,image)
+#         print("-----------")
+
 folder_out = "./output"
-for filename in os.listdir(folder):
-    path = os.path.join(folder, filename)
-    out_path = os.path.join(folder_out, filename)
-    if filename.lower().endswith(".jpeg"):
-        print(filename)
-        image = cv2.imread(path)
-        #image  = align(image)
-        detect(out_path,image)
-        print("-----------")
+
+skipFrame = int(params.get("RTSP","skip"))# input number of frame to be skipped processing  
+frameNo = 0
+
+winName = 'LPR'
+cv2.namedWindow(winName, cv2.WINDOW_NORMAL)
+
+# Get a reference to webcam #0 (the default one)
+v_source = params.get("RTSP","source1")
+video_capture = cv2.VideoCapture(v_source)
+while True:
+    
+    if(frameNo%skipFrame == 0) : 
+        # Grab a single frame of video
+        ret, frame = video_capture.read()
+            # Display the resulting image
+        cropped_file = os.path.join(folder_out, "{}.jpeg".format(frameNo))
+        frame_detect = detect(cropped_file,frame)
+        cv2.imshow(winName, frame_detect)
+
+    # Hit 'q' on the keyboard to quit!
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+    frameNo +=1
 
 
+# Release handle to the webcam
+video_capture.release()
+cv2.destroyAllWindows()
